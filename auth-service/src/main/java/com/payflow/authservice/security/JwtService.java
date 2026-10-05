@@ -25,17 +25,15 @@ public class JwtService {
         );
     }
 
-    public String generateToken(String email, String role) {
-
+    public String generateToken(Long userId, String email, String role) {
         Date now = new Date();
 
         return Jwts.builder()
                 .subject(email)
+                .claim("userId", userId)
                 .claim("role", role)
                 .issuedAt(now)
-                .expiration(
-                        new Date(now.getTime() + jwtExpiration)
-                )
+                .expiration(new Date(now.getTime() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
