@@ -204,6 +204,57 @@ public class AccountService {
 
 		return mapToResponse(updatedAccount);
 	}
+	//INTERNAL OR METHODS RELATED TO COMMUNICAION BETWEEN TRANSCATION AND ACCOUNT SERVICES
+
+	@Transactional
+	public AccountResponse debitInternal(String accountNumber, BigDecimal amount) {
+
+		Account account = accountRepository.findByAccountNumber(accountNumber)
+				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
+
+		if (account.getStatus() != AccountStatus.ACTIVE) {
+			throw new AccountNotActiveException("Account is not active");
+		}
+
+		amount = amount.setScale(2, RoundingMode.HALF_UP);
+
+		if (account.getBalance().compareTo(amount) < 0) {
+			throw new InsufficientBalanceException("Insufficient balance");
+		}
+
+		account.setBalance(account.getBalance().subtract(amount));
+
+		Account updatedAccount = accountRepository.save(account);
+
+		return mapToResponse(updatedAccount);
+	}
+
+	@Transactional
+	public AccountResponse creditInternal(String accountNumber, BigDecimal amount) {
+
+		Account account = accountRepository.findByAccountNumber(accountNumber)
+				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
+
+		if (account.getStatus() != AccountStatus.ACTIVE) {
+			throw new AccountNotActiveException("Account is not active");
+		}
+
+		amount = amount.setScale(2, RoundingMode.HALF_UP);
+
+		account.setBalance(account.getBalance().add(amount));
+
+		Account updatedAccount = accountRepository.save(account);
+
+		return mapToResponse(updatedAccount);
+	}
+	public AccountResponse getAccountByNumberInternal(String accountNumber) {
+
+	    Account account = accountRepository.findByAccountNumber(accountNumber)
+	            .orElseThrow(() ->
+	                    new AccountNotFoundException("Account not found"));
+
+	    return mapToResponse(account);
+	}
 
 	private AccountResponse mapToResponse(Account account) {
 

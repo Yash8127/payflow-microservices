@@ -7,6 +7,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.payflow.accountservice.security.InternalServiceAuthenticationFilter;
 import com.payflow.accountservice.security.JwtAuthenticationFilter;
 import com.payflow.accountservice.security.RestAccessDeniedHandler;
 import com.payflow.accountservice.security.RestAuthenticationEntryPoint;
@@ -17,13 +18,16 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final RestAuthenticationEntryPoint authenticationEntryPoint;
 	private final RestAccessDeniedHandler accessDeniedHandler;
+	private final InternalServiceAuthenticationFilter internalServiceAuthenticationFilter;
 
 	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-			RestAuthenticationEntryPoint authenticationEntryPoint, RestAccessDeniedHandler accessDeniedHandler) {
+			RestAuthenticationEntryPoint authenticationEntryPoint, RestAccessDeniedHandler accessDeniedHandler,
+			InternalServiceAuthenticationFilter internalServiceAuthenticationFilter) {
 
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 		this.authenticationEntryPoint = authenticationEntryPoint;
 		this.accessDeniedHandler = accessDeniedHandler;
+		this.internalServiceAuthenticationFilter = internalServiceAuthenticationFilter;
 	}
 
 	@Bean
@@ -36,6 +40,9 @@ public class SecurityConfig {
 						.accessDeniedHandler(accessDeniedHandler))
 
 				.authorizeHttpRequests(auth -> auth
+
+						// Internal service-to-service APIs
+						.requestMatchers("/internal/accounts/**").hasRole("SERVICE")
 
 						// Account creation
 						.requestMatchers("/accounts").hasAnyRole("USER", "ADMIN")
@@ -50,6 +57,7 @@ public class SecurityConfig {
 
 						.anyRequest().authenticated())
 
+				.addFilterBefore(internalServiceAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
