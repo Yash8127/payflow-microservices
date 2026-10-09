@@ -12,11 +12,17 @@ import lombok.Setter;
 @Setter
 public class TransferRequest {
 
+    @NotBlank(message = "Source account number is required")
+    private String sourceAccountNumber;
+
     @NotBlank(message = "Destination account number is required")
     private String destinationAccountNumber;
 
     @NotNull(message = "Amount is required")
-    @DecimalMin(value = "0.01", message = "Transfer amount must be greater than zero")
+    @DecimalMin(
+        value = "0.01",
+        message = "Transfer amount must be greater than zero"
+    )
     private BigDecimal amount;
 
     private String description;

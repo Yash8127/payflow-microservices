@@ -9,11 +9,14 @@ import com.payflow.transactionservice.entity.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    Optional<Transaction> findByReferenceNumber(String referenceNumber);
+	Optional<Transaction> findByReferenceNumber(String referenceNumber);
 
-    List<Transaction> findByUserIdOrderByCreatedAtDesc(Long userId);
+	List<Transaction> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<Transaction> findBySourceAccountIdOrderByCreatedAtDesc(Long sourceAccountId);
+	List<Transaction> findBySourceAccountIdOrderByCreatedAtDesc(Long sourceAccountId);
 
-    List<Transaction> findByDestinationAccountIdOrderByCreatedAtDesc(Long destinationAccountId);
+	List<Transaction> findByDestinationAccountIdOrderByCreatedAtDesc(Long destinationAccountId);
+
+	List<Transaction> findBySourceAccountIdOrDestinationAccountIdOrderByCreatedAtDesc(Long sourceAccountId,
+			Long destinationAccountId);
 }
