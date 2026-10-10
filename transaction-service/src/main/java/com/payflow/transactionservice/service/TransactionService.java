@@ -1,5 +1,6 @@
 package com.payflow.transactionservice.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.payflow.transactionservice.client.AccountServiceClient;
 import com.payflow.transactionservice.dto.AccountResponse;
@@ -17,9 +19,11 @@ import com.payflow.transactionservice.dto.TransferRequest;
 import com.payflow.transactionservice.entity.Transaction;
 import com.payflow.transactionservice.entity.TransactionStatus;
 import com.payflow.transactionservice.entity.TransactionType;
+import com.payflow.transactionservice.event.TransactionCompletedEvent;
 import com.payflow.transactionservice.exception.InsufficientBalanceException;
 import com.payflow.transactionservice.exception.InvalidTransactionException;
 import com.payflow.transactionservice.exception.TransactionException;
+import com.payflow.transactionservice.outbox.OutboxEventService;
 import com.payflow.transactionservice.repository.TransactionRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,7 @@ public class TransactionService {
 
 	private final TransactionRepository transactionRepository;
 	private final AccountServiceClient accountServiceClient;
+	private final OutboxEventService outboxEventService;
 
 	public Long getAuthenticatedUserId() {
 
@@ -70,6 +75,7 @@ public class TransactionService {
 		}
 	}
 
+	@Transactional
 	public TransactionResponse transfer(TransferRequest request) {
 
 		Long authenticatedUserId = getAuthenticatedUserId();
@@ -170,7 +176,16 @@ public class TransactionService {
 		// 12. Transfer completed
 		savedTransaction.setStatus(TransactionStatus.COMPLETED);
 
-		return mapToResponse(transactionRepository.save(savedTransaction));
+		Transaction completedTransaction = transactionRepository.save(savedTransaction);
+
+		TransactionCompletedEvent event = new TransactionCompletedEvent(completedTransaction.getReferenceNumber(),
+				completedTransaction.getUserId(), completedTransaction.getSourceAccountId(),
+				completedTransaction.getDestinationAccountId(), completedTransaction.getAmount(),
+				completedTransaction.getTransactionType().name(), LocalDateTime.now());
+
+		outboxEventService.saveTransactionCompletedEvent(event);
+
+		return mapToResponse(completedTransaction);
 	}
 
 	public List<TransactionResponse> getMyTransactions() {
