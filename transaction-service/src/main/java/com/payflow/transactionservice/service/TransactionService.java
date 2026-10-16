@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +37,7 @@ public class TransactionService {
 	private final TransactionRepository transactionRepository;
 	private final AccountServiceClient accountServiceClient;
 	private final OutboxEventService outboxEventService;
+	private final CircuitBreakerFactory<?, ?> circuitBreakerFactory;
 
 	public Long getAuthenticatedUserId() {
 
@@ -80,13 +83,15 @@ public class TransactionService {
 
 		Long authenticatedUserId = getAuthenticatedUserId();
 
-		// 1. Get source account
-		AccountResponse sourceAccount = accountServiceClient
-				.getAccountByNumberInternal(request.getSourceAccountNumber());
+		// 1. Get source account using circuit breaker
+		CircuitBreaker circuitBreaker = circuitBreakerFactory.create("accountRead");
 
-		// 2. Get destination account
-		AccountResponse destinationAccount = accountServiceClient
-				.getAccountByNumberInternal(request.getDestinationAccountNumber());
+		AccountResponse sourceAccount = circuitBreaker
+				.run(() -> accountServiceClient.getAccountByNumberInternal(request.getSourceAccountNumber()));
+
+		// 2. Get destination account using the same circuit breaker
+		AccountResponse destinationAccount = circuitBreaker
+				.run(() -> accountServiceClient.getAccountByNumberInternal(request.getDestinationAccountNumber()));
 
 		// 3. Verify source account ownership
 		if (!sourceAccount.getUserId().equals(authenticatedUserId)) {

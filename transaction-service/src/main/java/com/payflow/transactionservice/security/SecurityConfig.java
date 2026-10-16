@@ -33,6 +33,9 @@ public class SecurityConfig {
 
 						// Transaction APIs
 						.requestMatchers("/transactions/**").hasAnyRole("USER", "ADMIN")
+						
+						// Allow health checks without authentication
+						.requestMatchers("/actuator/health").permitAll()
 
 						// Everything else requires authentication
 						.anyRequest().authenticated())

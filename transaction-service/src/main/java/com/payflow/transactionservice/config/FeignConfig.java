@@ -13,55 +13,45 @@ import feign.RequestInterceptor;
 @Configuration
 public class FeignConfig {
 
-    @Value("${payflow.service.internal-key}")
-    private String internalKey;
+	@Value("${payflow.service.internal-key}")
+	private String internalKey;
 
-    @Bean
-    public RequestInterceptor requestInterceptor() {
+	@Bean
+	public RequestInterceptor requestInterceptor() {
 
-        return requestTemplate -> {
+		return requestTemplate -> {
 
-            String url = requestTemplate.url();
+			String url = requestTemplate.url();
 
-            /*
-             * Internal service-to-service request
-             */
-            if (url.startsWith("/internal/")) {
+			/*
+			 * Internal service-to-service request
+			 */
+			if (url.startsWith("/internal/")) {
 
-                requestTemplate.header(
-                        "X-Internal-Service-Key",
-                        internalKey
-                );
+				requestTemplate.header("X-Internal-Service-Key", internalKey);
 
-                // Do NOT forward user's JWT
-                return;
-            }
+				// Do NOT forward user's JWT
+				return;
+			}
 
-            /*
-             * Normal user-facing request
-             * Forward the user's JWT
-             */
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes)
-                            RequestContextHolder.getRequestAttributes();
+			/*
+			 * Normal user-facing request Forward the user's JWT
+			 */
+			ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder
+					.getRequestAttributes();
 
-            if (attributes == null) {
-                return;
-            }
+			if (attributes == null) {
+				return;
+			}
 
-            HttpServletRequest request = attributes.getRequest();
+			HttpServletRequest request = attributes.getRequest();
 
-            String authorization =
-                    request.getHeader("Authorization");
+			String authorization = request.getHeader("Authorization");
 
-            if (authorization != null
-                    && authorization.startsWith("Bearer ")) {
+			if (authorization != null && authorization.startsWith("Bearer ")) {
 
-                requestTemplate.header(
-                        "Authorization",
-                        authorization
-                );
-            }
-        };
-    }
+				requestTemplate.header("Authorization", authorization);
+			}
+		};
+	}
 }
