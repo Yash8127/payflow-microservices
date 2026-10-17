@@ -24,84 +24,61 @@ import jakarta.validation.Valid;
 @RequestMapping("/accounts")
 public class AccountController {
 
-    private final AccountService accountService;
+	private final AccountService accountService;
 
-    public AccountController(AccountService accountService) {
-        this.accountService = accountService;
-    }
+	public AccountController(AccountService accountService) {
+		this.accountService = accountService;
+	}
 
-    @PostMapping
-    public ResponseEntity<AccountResponse> createAccount(
-            @Valid @RequestBody CreateAccountRequest request) {
+	@PostMapping
+	public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
 
-        AccountResponse response =
-                accountService.createAccount(request);
+		AccountResponse response = accountService.createAccount(request);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
-    }
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> getAccountById(
-            @PathVariable Long id) {
+	@GetMapping("/{id}")
+	public ResponseEntity<AccountResponse> getAccountById(@PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                accountService.getAccountById(id)
-        );
-    }
+		return ResponseEntity.ok(accountService.getAccountById(id));
+	}
 
-    @GetMapping("/number/{accountNumber}")
-    public ResponseEntity<AccountResponse> getAccountByNumber(
-            @PathVariable String accountNumber) {
+	@GetMapping("/number/{accountNumber}")
+	public ResponseEntity<AccountResponse> getAccountByNumber(@PathVariable String accountNumber) {
 
-        return ResponseEntity.ok(
-                accountService.getAccountByNumber(accountNumber)
-        );
-    }
+		return ResponseEntity.ok(accountService.getAccountByNumber(accountNumber));
+	}
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AccountResponse>> getAccountsByUserId(
-            @PathVariable Long userId) {
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<List<AccountResponse>> getAccountsByUserId(@PathVariable Long userId) {
 
-        return ResponseEntity.ok(
-                accountService.getAccountsByUserId(userId)
-        );
-    }
-    @PostMapping("/{accountNumber}/deposit")
-    public ResponseEntity<AccountResponse> deposit(
-            @PathVariable String accountNumber,
-            @Valid @RequestBody DepositRequest request) {
+		return ResponseEntity.ok(accountService.getAccountsByUserId(userId));
+	}
 
-        return ResponseEntity.ok(
-                accountService.deposit(accountNumber, request)
-        );
-    }
+	@PostMapping("/{accountNumber}/deposit")
+	public ResponseEntity<AccountResponse> deposit(@PathVariable String accountNumber,
+			@Valid @RequestBody DepositRequest request) {
 
-    @PostMapping("/{accountNumber}/withdraw")
-    public ResponseEntity<AccountResponse> withdraw(
-            @PathVariable String accountNumber,
-            @Valid @RequestBody WithdrawRequest request) {
+		return ResponseEntity.ok(accountService.deposit(accountNumber, request));
+	}
 
-        return ResponseEntity.ok(
-                accountService.withdraw(accountNumber, request)
-        );
-    }
-    @PutMapping("/{id}/freeze")
-    public ResponseEntity<AccountResponse> freezeAccount(
-            @PathVariable Long id) {
+	@PostMapping("/{accountNumber}/withdraw")
+	public ResponseEntity<AccountResponse> withdraw(@PathVariable String accountNumber,
+			@Valid @RequestBody WithdrawRequest request) {
 
-        return ResponseEntity.ok(
-                accountService.freezeAccount(id)
-        );
-    }
+		return ResponseEntity.ok(accountService.withdraw(accountNumber, request));
+	}
 
-    @PutMapping("/{id}/unfreeze")
-    public ResponseEntity<AccountResponse> unfreezeAccount(
-            @PathVariable Long id) {
+	@PutMapping("/{id}/freeze")
+	public ResponseEntity<AccountResponse> freezeAccount(@PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                accountService.unfreezeAccount(id)
-        );
-    }
+		return ResponseEntity.ok(accountService.freezeAccount(id));
+	}
+
+	@PutMapping("/{id}/unfreeze")
+	public ResponseEntity<AccountResponse> unfreezeAccount(@PathVariable Long id) {
+
+		return ResponseEntity.ok(accountService.unfreezeAccount(id));
+	}
 }

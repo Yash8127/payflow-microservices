@@ -16,11 +16,13 @@ import com.payflow.accountservice.dto.CreateAccountRequest;
 import com.payflow.accountservice.dto.DepositRequest;
 import com.payflow.accountservice.dto.WithdrawRequest;
 import com.payflow.accountservice.entity.Account;
+import com.payflow.accountservice.entity.AccountOperation;
 import com.payflow.accountservice.entity.AccountStatus;
 import com.payflow.accountservice.exception.AccountAlreadyExistsException;
 import com.payflow.accountservice.exception.AccountNotActiveException;
 import com.payflow.accountservice.exception.AccountNotFoundException;
 import com.payflow.accountservice.exception.InsufficientBalanceException;
+import com.payflow.accountservice.repository.AccountOperationRepository;
 import com.payflow.accountservice.repository.AccountRepository;
 
 @Service
@@ -28,10 +30,17 @@ public class AccountService {
 
 	private final AccountRepository accountRepository;
 
+	private final AccountOperationRepository accountOperationRepository;
+	private final AccountOperationService accountOperationService;
+
 	private final SecureRandom secureRandom = new SecureRandom();
 
-	public AccountService(AccountRepository accountRepository) {
+	public AccountService(AccountRepository accountRepository, AccountOperationRepository accountOperationRepository,
+			AccountOperationService accountOperationService) {
+
 		this.accountRepository = accountRepository;
+		this.accountOperationRepository = accountOperationRepository;
+		this.accountOperationService = accountOperationService;
 	}
 
 	public AccountResponse createAccount(CreateAccountRequest request) {
@@ -204,56 +213,36 @@ public class AccountService {
 
 		return mapToResponse(updatedAccount);
 	}
-	//INTERNAL OR METHODS RELATED TO COMMUNICAION BETWEEN TRANSCATION AND ACCOUNT SERVICES
+	// INTERNAL OR METHODS RELATED TO COMMUNICAION BETWEEN TRANSCATION AND ACCOUNT
+	// SERVICES
 
-	@Transactional
-	public AccountResponse debitInternal(String accountNumber, BigDecimal amount) {
+	public AccountResponse debitInternal(String accountNumber, BigDecimal amount, String idempotencyKey) {
 
-		Account account = accountRepository.findByAccountNumber(accountNumber)
+		accountOperationService.processOperation(idempotencyKey, accountNumber, amount, "DEBIT");
+
+		return accountRepository.findByAccountNumber(accountNumber).map(this::mapToResponse)
 				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
-
-		if (account.getStatus() != AccountStatus.ACTIVE) {
-			throw new AccountNotActiveException("Account is not active");
-		}
-
-		amount = amount.setScale(2, RoundingMode.HALF_UP);
-
-		if (account.getBalance().compareTo(amount) < 0) {
-			throw new InsufficientBalanceException("Insufficient balance");
-		}
-
-		account.setBalance(account.getBalance().subtract(amount));
-
-		Account updatedAccount = accountRepository.save(account);
-
-		return mapToResponse(updatedAccount);
 	}
 
-	@Transactional
-	public AccountResponse creditInternal(String accountNumber, BigDecimal amount) {
+	public AccountResponse creditInternal(String accountNumber, BigDecimal amount, String idempotencyKey,
+			String operationType) {
 
-		Account account = accountRepository.findByAccountNumber(accountNumber)
-				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
-
-		if (account.getStatus() != AccountStatus.ACTIVE) {
-			throw new AccountNotActiveException("Account is not active");
+		if (!"CREDIT".equals(operationType) && !"COMPENSATION".equals(operationType)) {
+			throw new IllegalArgumentException("Invalid credit operation type");
 		}
 
-		amount = amount.setScale(2, RoundingMode.HALF_UP);
+		accountOperationService.processOperation(idempotencyKey, accountNumber, amount, operationType);
 
-		account.setBalance(account.getBalance().add(amount));
-
-		Account updatedAccount = accountRepository.save(account);
-
-		return mapToResponse(updatedAccount);
+		return accountRepository.findByAccountNumber(accountNumber).map(this::mapToResponse)
+				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
 	}
+
 	public AccountResponse getAccountByNumberInternal(String accountNumber) {
 
-	    Account account = accountRepository.findByAccountNumber(accountNumber)
-	            .orElseThrow(() ->
-	                    new AccountNotFoundException("Account not found"));
+		Account account = accountRepository.findByAccountNumber(accountNumber)
+				.orElseThrow(() -> new AccountNotFoundException("Account not found"));
 
-	    return mapToResponse(account);
+		return mapToResponse(account);
 	}
 
 	private AccountResponse mapToResponse(Account account) {

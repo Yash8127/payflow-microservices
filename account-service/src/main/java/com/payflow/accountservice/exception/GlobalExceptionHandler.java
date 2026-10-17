@@ -1,5 +1,8 @@
 package com.payflow.accountservice.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -8,53 +11,44 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleAccountNotFound(
-            AccountNotFoundException ex) {
+	@ExceptionHandler(AccountNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleAccountNotFound(AccountNotFoundException ex) {
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage()
-        );
+		ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
-    }
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+	}
 
-    @ExceptionHandler(InsufficientBalanceException.class)
-    public ResponseEntity<ErrorResponse> handleInsufficientBalance(
-            InsufficientBalanceException ex) {
+	@ExceptionHandler(InsufficientBalanceException.class)
+	public ResponseEntity<ErrorResponse> handleInsufficientBalance(InsufficientBalanceException ex) {
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage()
-        );
+		ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(error);
-    }
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+	}
 
-    @ExceptionHandler(AccountNotActiveException.class)
-    public ResponseEntity<ErrorResponse> handleAccountNotActive(
-            AccountNotActiveException ex) {
+	@ExceptionHandler(AccountNotActiveException.class)
+	public ResponseEntity<ErrorResponse> handleAccountNotActive(AccountNotActiveException ex) {
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage()
-        );
+		ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(error);
-    }
-    @ExceptionHandler(AccountAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleAccountAlreadyExists(
-            AccountAlreadyExistsException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+	}
 
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse(409, ex.getMessage()));
-    }
+	@ExceptionHandler(AccountAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleAccountAlreadyExists(AccountAlreadyExistsException ex) {
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(409, ex.getMessage()));
+	}
+
+	@ExceptionHandler(IdempotencyConflictException.class)
+	public ResponseEntity<Map<String, String>> handleIdempotencyConflict(IdempotencyConflictException ex) {
+
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "IDEMPOTENCY_CONFLICT");
+		error.put("message", ex.getMessage());
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+	}
+
 }

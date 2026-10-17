@@ -18,51 +18,41 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String INTERNAL_HEADER = "X-Internal-Service-Key";
+	private static final String INTERNAL_HEADER = "X-Internal-Service-Key";
 
-    @Value("${payflow.service.internal-key}")
-    private String internalKey;
+	@Value("${payflow.service.internal-key}")
+	private String internalKey;
 
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
 
-        String requestUri = request.getRequestURI();
+		String requestUri = request.getRequestURI();
 
-        // Only protect internal endpoints
-        if (!requestUri.startsWith("/internal/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+		// Only protect internal endpoints
+		if (!requestUri.startsWith("/internal/")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 
-        String providedKey = request.getHeader(INTERNAL_HEADER);
+		String providedKey = request.getHeader(INTERNAL_HEADER);
 
-        // Missing or invalid internal key
-        if (providedKey == null || !internalKey.equals(providedKey)) {
+		// Missing or invalid internal key
+		if (providedKey == null || !internalKey.equals(providedKey)) {
 
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json");
-            response.getWriter().write(
-                    "{\"status\":403,\"message\":\"Invalid internal service credentials\"}"
-            );
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			response.setContentType("application/json");
+			response.getWriter().write("{\"status\":403,\"message\":\"Invalid internal service credentials\"}");
 
-            return;
-        }
+			return;
+		}
 
-        // Authenticate the calling service
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        "transaction-service",
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
-                );
+		// Authenticate the calling service
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+				"transaction-service", null, List.of(new SimpleGrantedAuthority("ROLE_SERVICE")));
 
-        SecurityContextHolder.getContext()
-                .setAuthentication(authentication);
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        filterChain.doFilter(request, response);
-    }
+		filterChain.doFilter(request, response);
+	}
 }

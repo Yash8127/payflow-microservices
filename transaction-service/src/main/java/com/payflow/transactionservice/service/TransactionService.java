@@ -144,12 +144,14 @@ public class TransactionService {
 		try {
 
 			// 10. Debit source account
-			accountServiceClient.debitInternal(request.getSourceAccountNumber(), amountRequest);
+			accountServiceClient.debitInternal(request.getSourceAccountNumber(),
+					savedTransaction.getReferenceNumber() + "-DEBIT", amountRequest);
 
 			debitSuccessful = true;
 
 			// 11. Credit destination account
-			accountServiceClient.creditInternal(request.getDestinationAccountNumber(), amountRequest);
+			accountServiceClient.creditInternal(request.getDestinationAccountNumber(),
+					savedTransaction.getReferenceNumber() + "-CREDIT", "CREDIT", amountRequest);
 
 		} catch (Exception ex) {
 
@@ -161,7 +163,8 @@ public class TransactionService {
 
 				try {
 
-					accountServiceClient.creditInternal(request.getSourceAccountNumber(), amountRequest);
+					accountServiceClient.creditInternal(request.getSourceAccountNumber(),
+							savedTransaction.getReferenceNumber() + "-COMPENSATION", "COMPENSATION", amountRequest);
 
 				} catch (Exception compensationException) {
 
